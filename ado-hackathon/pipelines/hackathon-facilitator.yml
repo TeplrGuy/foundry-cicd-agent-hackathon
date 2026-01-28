@@ -1,0 +1,739 @@
+# Azure DevOps AI Agent Deployment Hackathon Facilitator
+# 
+# This pipeline manages the entire hackathon experience for deploying AI agents:
+# 1. Initial run (manual): Creates Epic and Step 1 work item
+# 2. Subsequent runs (automatic): Detects step completion and creates next work items
+#
+# Teaches students to deploy AI agents using pipelines in /cicd folder
+
+trigger:
+  branches:
+    include:
+      - main
+  # Trigger on ANY push to main branch to detect step completions
+  # The pipeline itself checks for completion marker files
+
+pr: none
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  System.Debug: false
+
+stages:
+- stage: InitializeOrProgress
+  displayName: 'Hackathon Facilitator'
+  jobs:
+  - job: ManageHackathon
+    displayName: 'Initialize or Progress Hackathon'
+    steps:
+    - checkout: self
+      clean: true
+
+    - task: PowerShell@2
+      displayName: 'Hackathon Facilitator'
+      inputs:
+        targetType: 'inline'
+        script: |
+          Write-Host "##[section]Azure DevOps CI/CD Hackathon Facilitator"
+          Write-Host "This pipeline manages your hackathon progress automatically!"
+          Write-Host ""
+          
+          $token = "$(System.AccessToken)"
+          $encodedToken = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(":$token"))
+          $headers = @{
+              Authorization = "Basic $encodedToken"
+              "Content-Type" = "application/json-patch+json"
+          }
+          
+          $orgUrl = "$(System.CollectionUri)"
+          $projectName = "$(System.TeamProject)"
+          $apiVersion = "7.1"
+          
+          # Helper function to convert Markdown to HTML for Azure DevOps work items
+          function Convert-MarkdownToHtml {
+              param([string]$Markdown)
+              
+              $html = $Markdown
+              
+              # Handle collapsible sections (details/summary) - MUST be before other processing
+              # Pattern: <details>\n<summary>Title</summary>\n\ncontent\n</details>
+              $html = [regex]::Replace($html, '<details>\s*<summary>([^<]+)</summary>', '<div style="border:1px solid #ddd;border-radius:4px;margin:10px 0;"><div style="background:#f0f0f0;padding:8px;cursor:pointer;font-weight:bold;">📌 $1 (click to expand)</div><div style="padding:10px;display:block;">')
+              $html = $html -replace '</details>', '</div></div>'
+              
+              # Handle fenced code blocks with language (```yaml, ```bash, etc.)
+              $html = [regex]::Replace($html, '```(\w+)\r?\n([\s\S]*?)```', '<pre style="background-color:#f4f4f4;padding:10px;border-radius:4px;overflow-x:auto;font-family:monospace;"><code>$2</code></pre>')
+              
+              # Handle fenced code blocks without language
+              $html = [regex]::Replace($html, '```\r?\n([\s\S]*?)```', '<pre style="background-color:#f4f4f4;padding:10px;border-radius:4px;overflow-x:auto;font-family:monospace;"><code>$1</code></pre>')
+              
+              # Handle inline code
+              $html = [regex]::Replace($html, '`([^`]+)`', '<code style="background-color:#f4f4f4;padding:2px 5px;border-radius:3px;font-family:monospace;">$1</code>')
+              
+              # Handle markdown tables - convert to HTML tables
+              # First, identify table rows (lines starting with |)
+              $tablePattern = '(?m)(^\|.+\|\r?\n)+'
+              $html = [regex]::Replace($html, $tablePattern, {
+                  param($match)
+                  $tableContent = $match.Value
+                  $rows = $tableContent -split '\r?\n' | Where-Object { $_ -match '^\|' }
+                  $htmlTable = '<table style="border-collapse:collapse;width:100%;margin:10px 0;">'
+                  $isHeader = $true
+                  foreach ($row in $rows) {
+                      # Skip separator row (|---|---|)
+                      if ($row -match '^\|[\s\-:]+\|$') { continue }
+                      if ($row -match '^\|(\s*[-:]+\s*\|)+$') { continue }
+                      
+                      $cells = $row -split '\|' | Where-Object { $_.Trim() -ne '' }
+                      if ($isHeader) {
+                          $htmlTable += '<tr style="background:#f0f0f0;">'
+                          foreach ($cell in $cells) {
+                              $htmlTable += "<th style='border:1px solid #ddd;padding:8px;text-align:left;'>$($cell.Trim())</th>"
+                          }
+                          $htmlTable += '</tr>'
+                          $isHeader = $false
+                      } else {
+                          $htmlTable += '<tr>'
+                          foreach ($cell in $cells) {
+                              $htmlTable += "<td style='border:1px solid #ddd;padding:8px;'>$($cell.Trim())</td>"
+                          }
+                          $htmlTable += '</tr>'
+                      }
+                  }
+                  $htmlTable += '</table>'
+                  return $htmlTable
+              })
+              
+              # Handle headers
+              $html = [regex]::Replace($html, '^#### (.+)$', '<h4 style="color:#333;margin-top:15px;">$1</h4>', 'Multiline')
+              $html = [regex]::Replace($html, '^### (.+)$', '<h3 style="color:#333;margin-top:20px;">$1</h3>', 'Multiline')
+              $html = [regex]::Replace($html, '^## (.+)$', '<h2 style="color:#0066cc;margin-top:25px;border-bottom:1px solid #eee;padding-bottom:5px;">$1</h2>', 'Multiline')
+              $html = [regex]::Replace($html, '^# (.+)$', '<h1 style="color:#0066cc;">$1</h1>', 'Multiline')
+              
+              # Handle bold and italic
+              $html = [regex]::Replace($html, '\*\*\*(.+?)\*\*\*', '<strong><em>$1</em></strong>')
+              $html = [regex]::Replace($html, '\*\*(.+?)\*\*', '<strong>$1</strong>')
+              $html = [regex]::Replace($html, '\*(.+?)\*', '<em>$1</em>')
+              
+              # Handle links
+              $html = [regex]::Replace($html, '\[([^\]]+)\]\(([^)]+)\)', '<a href="$2" style="color:#0066cc;">$1</a>')
+              
+              # Handle horizontal rules
+              $html = [regex]::Replace($html, '^---+$', '<hr style="border:none;border-top:1px solid #ddd;margin:20px 0;"/>', 'Multiline')
+              
+              # Handle unordered lists (- item)
+              $html = [regex]::Replace($html, '(?m)^- (.+)$', '<li style="margin:5px 0;">$1</li>')
+              $html = [regex]::Replace($html, '(<li[^>]*>.*</li>)(\r?\n<li)', '$1$2')
+              
+              # Handle checkbox lists
+              $html = $html -replace '\[ \]', '☐'
+              $html = $html -replace '\[x\]', '☑'
+              $html = $html -replace '\[X\]', '☑'
+              
+              # Handle numbered lists
+              $html = [regex]::Replace($html, '(?m)^\d+\. (.+)$', '<li style="margin:5px 0;">$1</li>')
+              
+              # Handle blockquotes
+              $html = [regex]::Replace($html, '(?m)^> (.+)$', '<blockquote style="border-left:4px solid #0066cc;padding-left:15px;margin:10px 0;color:#555;background:#f9f9f9;">$1</blockquote>')
+              
+              # Convert remaining newlines to <br/>
+              $html = $html -replace '\r?\n', '<br/>'
+              
+              # Clean up excessive <br/> tags
+              $html = [regex]::Replace($html, '(<br/>){3,}', '<br/><br/>')
+              $html = $html -replace '<h(\d)([^>]*)><br/>', '<h$1$2>'
+              $html = $html -replace '<br/></h(\d)>', '</h$1>'
+              $html = $html -replace '</pre><br/>', '</pre>'
+              $html = $html -replace '<br/><pre', '<pre'
+              $html = $html -replace '</li><br/>', '</li>'
+              $html = $html -replace '<br/><li>', '<li>'
+              $html = $html -replace '</blockquote><br/>', '</blockquote>'
+              $html = $html -replace '<hr[^>]*><br/>', '<hr style="border:none;border-top:1px solid #ddd;margin:20px 0;"/>'
+              $html = $html -replace '</table><br/>', '</table>'
+              $html = $html -replace '<br/><table', '<table'
+              $html = $html -replace '</div></div><br/>', '</div></div>'
+              
+              return $html
+          }
+          
+          # Helper function to create work items with type detection
+          function Create-WorkItem {
+              param(
+                  [string]$Title,
+                  [string]$Description,
+                  [string]$ParentId = $null
+              )
+              
+              Write-Host "Creating work item: $Title"
+              
+              # Try each work item type until one succeeds
+              $workItemTypes = @("User Story", "Product Backlog Item", "Issue", "Requirement")
+              $created = $false
+              
+              foreach ($workItemType in $workItemTypes) {
+                  try {
+                      $workItemBody = @(
+                          @{
+                              op = "add"
+                              path = "/fields/System.Title"
+                              value = $Title
+                          },
+                          @{
+                              op = "add"
+                              path = "/fields/System.Description"
+                              value = $Description
+                          }
+                      )
+                      
+                      if ($ParentId) {
+                          $workItemBody += @{
+                              op = "add"
+                              path = "/relations/-"
+                              value = @{
+                                  rel = "System.LinkTypes.Hierarchy-Reverse"
+                                  url = "${orgUrl}_apis/wit/workitems/${ParentId}"
+                              }
+                          }
+                      }
+                      
+                      $body = ConvertTo-Json -InputObject $workItemBody -Depth 10
+                      $createUrl = "${orgUrl}${projectName}/_apis/wit/workitems/`$$workItemType`?api-version=$apiVersion"
+                      
+                      $response = Invoke-RestMethod -Uri $createUrl -Method Post -Headers $headers -Body $body
+                      Write-Host "✅ Created work item #$($response.id) (Type: $workItemType)"
+                      return $response.id
+                  }
+                  catch {
+                      Write-Host "Could not create with type '$workItemType', trying next..."
+                  }
+              }
+              
+              Write-Host "##[error]Failed to create work item with any type"
+              return $null
+          }
+          
+          # Helper function to close work item
+          function Close-WorkItem {
+              param([string]$WorkItemId)
+              
+              Write-Host "Marking work item #$WorkItemId as complete..."
+              
+              # Try to change state first
+              $statesToTry = @("Done", "Closed", "Resolved")
+              $stateChanged = $false
+              
+              foreach ($state in $statesToTry) {
+                  $closeBody = @(
+                      @{
+                          op = "add"
+                          path = "/fields/System.State"
+                          value = $state
+                      }
+                  ) | ConvertTo-Json -Depth 10
+                  
+                  $closeUrl = "${orgUrl}${projectName}/_apis/wit/workitems/${WorkItemId}?api-version=$apiVersion"
+                  
+                  try {
+                      Invoke-RestMethod -Uri $closeUrl -Method Patch -Headers $headers -Body $closeBody | Out-Null
+                      Write-Host "✅ Work item #$WorkItemId marked as $state"
+                      $stateChanged = $true
+                      break
+                  }
+                  catch {
+                      # Try next state
+                  }
+              }
+              
+              if (-not $stateChanged) {
+                  Write-Host "##[warning]Could not change state, adding completion tag instead..."
+                  # Add a tag to mark as complete
+                  $tagBody = @(
+                      @{
+                          op = "add"
+                          path = "/fields/System.Tags"
+                          value = "Completed"
+                      }
+                  ) | ConvertTo-Json -Depth 10
+                  
+                  try {
+                      Invoke-RestMethod -Uri $closeUrl -Method Patch -Headers $headers -Body $tagBody | Out-Null
+                      Write-Host "✅ Added 'Completed' tag to work item #$WorkItemId"
+                  }
+                  catch {
+                      Write-Host "##[warning]Could not update work item #$WorkItemId at all (permissions issue)"
+                  }
+              }
+          }
+          
+          # Helper function to find work item by title
+          function Find-WorkItem {
+              param(
+                  [string]$TitlePattern,
+                  [switch]$ExactMatch
+              )
+              
+              $whereClause = if ($ExactMatch) {
+                  "[System.Title] = '$TitlePattern'"
+              } else {
+                  "[System.Title] CONTAINS '$TitlePattern'"
+              }
+              
+              $wiql = @{
+                  query = "SELECT [System.Id], [System.State], [System.Title], [System.Tags] FROM WorkItems WHERE $whereClause AND [System.TeamProject] = '$projectName' ORDER BY [System.CreatedDate] DESC"
+              } | ConvertTo-Json
+              
+              $wiqlUrl = "${orgUrl}${projectName}/_apis/wit/wiql?api-version=$apiVersion"
+              
+              try {
+                  $queryResult = Invoke-RestMethod -Uri $wiqlUrl -Method Post -Headers $headers -Body $wiql -ContentType "application/json"
+                  
+                  if ($queryResult.workItems -and $queryResult.workItems.Count -gt 0) {
+                      $workItemId = $queryResult.workItems[0].id
+                      
+                      # Get work item details
+                      $wiUrl = "${orgUrl}${projectName}/_apis/wit/workitems/${workItemId}?api-version=$apiVersion"
+                      $wi = Invoke-RestMethod -Uri $wiUrl -Method Get -Headers $headers
+                      
+                      return @{
+                          Id = $workItemId
+                          State = $wi.fields.'System.State'
+                          Title = $wi.fields.'System.Title'
+                          Tags = $wi.fields.'System.Tags'
+                      }
+                  }
+              }
+              catch {
+                  Write-Host "Could not query work item: $_"
+              }
+              
+              return $null
+          }
+          
+          Write-Host "##[section]Step 1: Check if hackathon is initialized"
+          
+          # Check if Epic exists
+          $epic = Find-WorkItem -TitlePattern "AI Agent Deployment Hackathon"
+          
+          if (-not $epic) {
+              Write-Host "🎯 First time run - Initializing hackathon!"
+              Write-Host ""
+              
+              # Create Epic work item
+              Write-Host "##[section]Creating Parent Epic"
+              $epicDescription = @"
+          <h1>Welcome to the AI Agent Deployment Hackathon! 🤖🚀</h1>
+          <p>This Epic tracks your progress through all 7 steps of learning to deploy AI agents with Azure DevOps CI/CD.</p>
+          <h2>Your Journey:</h2>
+          <ol>
+          <li>Setup Azure AI Resources (AI Projects, OpenAI, Service Principal)</li>
+          <li>Configure Azure DevOps (Service Connections, Variable Groups, Environments)</li>
+          <li>Create Agent Creation Pipeline (cicd/createagentpipeline.yml)</li>
+          <li>Deploy Agents Across Environments (Dev → Test → Prod)</li>
+          <li>Create Testing Pipeline (cicd/agentconsumptionpipeline.yml)</li>
+          <li>Run Agent Evaluation (AI Quality Metrics)</li>
+          <li>Security & Red Team Testing (Security Assessment)</li>
+          </ol>
+          <p><strong>What you'll learn:</strong> Deploy AI agents, CI/CD pipelines, multi-environment promotion, AI evaluation, and security testing!</p>
+          <p><strong>How it works:</strong> Complete each step, push your changes, and the facilitator pipeline will automatically create the next work item!</p>
+          <p>Good luck! 🎉</p>
+          "@
+              
+              $epicId = Create-WorkItem -Title "🤖 AI Agent Deployment Hackathon - Progress Tracker" -Description $epicDescription
+              
+              if (-not $epicId) {
+                  Write-Host "##[error]Failed to create Epic work item"
+                  exit 1
+              }
+              
+              Write-Host ""
+              Write-Host "##[section]Creating Step 1 Work Item"
+              
+              # Check if Step 1 already exists
+              $existingStep1 = Find-WorkItem -TitlePattern "Step 1: Setup Azure AI Resources" -ExactMatch
+              if ($existingStep1) {
+                  Write-Host "##[warning]Step 1 work item already exists (#$($existingStep1.Id)). Skipping creation."
+                  Write-Host ""
+                  Write-Host "🎯 Work item #$($existingStep1.Id) is ready. Start working on Step 1!"
+                  exit 0
+              }
+              
+              # Read Step 1 instructions
+              $step1Path = "$(Build.SourcesDirectory)/ado-hackathon/work-items/step-1-azure-resources.md"
+              if (Test-Path $step1Path) {
+                  $step1Content = Get-Content $step1Path -Raw
+                  $step1Html = Convert-MarkdownToHtml -Markdown $step1Content
+              } else {
+                  $step1Html = "<p>See ado-hackathon/work-items/step-1-azure-resources.md for instructions</p>"
+              }
+              
+              $step1Id = Create-WorkItem -Title "Step 1: Setup Azure AI Resources" -Description $step1Html -ParentId $epicId
+              
+              if ($step1Id) {
+                  Write-Host ""
+                  Write-Host "##[section]✅ Hackathon Initialized Successfully!"
+                  Write-Host ""
+                  Write-Host "🎯 Next steps:"
+                  Write-Host "   1. Go to Boards → Work Items"
+                  Write-Host "   2. Open Step 1 work item #$step1Id"
+                  Write-Host "   3. Follow the instructions"
+                  Write-Host "   4. Push your changes when done"
+                  Write-Host "   5. This pipeline will automatically create Step 2!"
+                  Write-Host ""
+              } else {
+                  Write-Host "##[error]Failed to create Step 1 work item"
+                  exit 1
+              }
+              
+              exit 0
+          }
+          
+          Write-Host "✅ Hackathon already initialized (Epic #$($epic.Id) found)"
+          Write-Host ""
+          
+          # Define step detection rules for AI agent deployment hackathon
+          $steps = @(
+              @{
+                  Number = 1
+                  Title = "Step 1: Setup Azure AI Resources"
+                  SearchPattern = "Step 1"
+                  NextTitle = "Step 2: Configure Azure DevOps for AI Agent Deployment"
+                  Files = @("azure-resources.md")
+                  WorkItemFile = "step-2-azure-devops.md"
+              },
+              @{
+                  Number = 2
+                  Title = "Step 2: Configure Azure DevOps for AI Agent Deployment"
+                  SearchPattern = "Step 2"
+                  NextTitle = "Step 3: Build Your Agent Deployment Pipeline 🎓"
+                  Files = @("azure-devops-config.md")
+                  WorkItemFile = "step-3-create-agent-pipeline.md"
+              },
+              @{
+                  Number = 3
+                  Title = "Step 3: Build Your Agent Deployment Pipeline 🎓"
+                  SearchPattern = "Step 3"
+                  NextTitle = "Step 4: Run Pipeline & Deploy Agents 🚀"
+                  Files = @("pipeline-1-created.md")
+                  WorkItemFile = "step-4-deploy-agents.md"
+              },
+              @{
+                  Number = 4
+                  Title = "Step 4: Run Pipeline & Deploy Agents 🚀"
+                  SearchPattern = "Step 4"
+                  NextTitle = "Step 5: Build Your Testing Pipeline 🧪"
+                  Files = @("agents-deployed.md")
+                  WorkItemFile = "step-5-create-testing-pipeline.md"
+              },
+              @{
+                  Number = 5
+                  Title = "Step 5: Build Your Testing Pipeline 🧪"
+                  SearchPattern = "Step 5"
+                  NextTitle = "Step 6: Run Evaluation & Review Metrics 📊"
+                  Files = @("pipeline-2-created.md")
+                  WorkItemFile = "step-6-run-evaluation.md"
+              },
+              @{
+                  Number = 6
+                  Title = "Step 6: Run Evaluation & Review Metrics 📊"
+                  SearchPattern = "Step 6"
+                  NextTitle = "Step 7: Security Red Team Analysis 🔒"
+                  Files = @("evaluation-complete.md")
+                  WorkItemFile = "step-7-security-redteam.md"
+              },
+              @{
+                  Number = 7
+                  Title = "Step 7: Security Red Team Analysis 🔒"
+                  SearchPattern = "Step 7"
+                  NextTitle = $null
+                  Files = @("hackathon-complete.md")
+                  WorkItemFile = $null
+              }
+          )
+          
+          Write-Host "##[section]Step 2: Check for completed steps"
+          Write-Host ""
+          
+          # NEW APPROACH: Use file existence as source of truth, not work item state
+          $progressMade = $false
+          $currentActiveStep = $null
+          
+          # First pass: Scan all steps and check BOTH work item state AND file existence
+          Write-Host "Scanning all steps to find current progress..."
+          foreach ($step in $steps) {
+              $exactTitle = $step.Title
+              $workItem = Find-WorkItem -TitlePattern $exactTitle -ExactMatch
+              
+              if (-not $workItem) {
+                  Write-Host "  Step $($step.Number): Work item not created yet"
+                  # If this is step 1 and it doesn't exist, something is wrong
+                  if ($step.Number -eq 1) {
+                      Write-Host "##[error]Step 1 should already exist! Something went wrong in initialization."
+                      exit 1
+                  }
+                  # This is the first step without a work item - previous step needs to create it
+                  # But first, check if previous step was actually complete
+                  break
+              }
+              
+              # Check if step is complete by work item state, tags, OR file existence
+              $workItemComplete = $workItem.State -eq "Done" -or $workItem.State -eq "Closed" -or $workItem.State -eq "Resolved"
+              if (-not $workItemComplete -and $workItem.Tags) {
+                  $workItemComplete = $workItem.Tags -like "*Completed*"
+              }
+              
+              # Check if completion files exist
+              $filesExist = $false
+              foreach ($file in $step.Files) {
+                  $fullPath = "$(Build.SourcesDirectory)/$file"
+                  if (Test-Path $fullPath) {
+                      $filesExist = $true
+                      break
+                  }
+              }
+              
+              $isActuallyComplete = $workItemComplete -or $filesExist
+              $statusIcon = if($isActuallyComplete){'✅'}else{'📋'}
+              $statusText = if($filesExist){"Files exist"}elseif($workItemComplete){"Work item closed"}else{"In progress"}
+              
+              Write-Host "  Step $($step.Number): Work Item #$($workItem.Id) - $statusText $statusIcon"
+              
+              if (-not $isActuallyComplete) {
+                  # This is our active step - files don't exist yet
+                  $currentActiveStep = @{
+                      Step = $step
+                      WorkItem = $workItem
+                      FilesExist = $false
+                  }
+                  break
+              }
+              
+              # Files exist - this step is complete, continue to check next step
+              # (Don't break here - let the loop continue to find the first incomplete step)
+          }
+          
+          if (-not $currentActiveStep) {
+              # No incomplete step found - either all are done or we need to create the next one
+              Write-Host ""
+              Write-Host "All existing step work items have their completion files!"
+              Write-Host ""
+              
+              # Find the last completed step and create the next one
+              $lastCompletedStep = $null
+              foreach ($step in $steps) {
+                  $workItem = Find-WorkItem -TitlePattern $step.Title -ExactMatch
+                  if ($workItem) {
+                      # Check if files exist for this step
+                      $filesExist = $false
+                      foreach ($file in $step.Files) {
+                          $fullPath = "$(Build.SourcesDirectory)/$file"
+                          if (Test-Path $fullPath) {
+                              $filesExist = $true
+                              break
+                          }
+                      }
+                      if ($filesExist) {
+                          $lastCompletedStep = $step
+                      }
+                  } else {
+                      # This step doesn't have a work item - need to create it
+                      break
+                  }
+              }
+              
+              if (-not $lastCompletedStep) {
+                  Write-Host "##[error]Could not determine last completed step"
+                  exit 1
+              }
+              
+              Write-Host "Last completed step: Step $($lastCompletedStep.Number)"
+              
+              # Try to close the last completed step's work item
+              $lastWorkItem = Find-WorkItem -TitlePattern $lastCompletedStep.Title -ExactMatch
+              if ($lastWorkItem) {
+                  Write-Host "Attempting to mark Step $($lastCompletedStep.Number) work item as complete..."
+                  Close-WorkItem -WorkItemId $lastWorkItem.Id
+              }
+              
+              # Check if this was the last step
+              if (-not $lastCompletedStep.NextTitle) {
+                  Write-Host ""
+                  Write-Host "##[section]🎉🎉🎉 CONGRATULATIONS! 🎉🎉🎉"
+                  Write-Host "You've completed ALL 7 steps of the AI Agent Deployment Hackathon!"
+                  exit 0
+              }
+              
+              # Create the next step
+              $nextStepNumber = $lastCompletedStep.Number + 1
+              $nextStep = $steps | Where-Object { $_.Number -eq $nextStepNumber }
+              
+              if (-not $nextStep) {
+                  Write-Host "##[error]Could not find next step definition"
+                  exit 1
+              }
+              
+              # Check if next step already exists
+              $existingNext = Find-WorkItem -TitlePattern $nextStep.Title -ExactMatch
+              if ($existingNext) {
+                  Write-Host "Step $($nextStep.Number) work item already exists (#$($existingNext.Id))"
+                  Write-Host ""
+                  Write-Host "✅ All caught up! Continue with Step $($nextStep.Number)!"
+                  exit 0
+              }
+              
+              # Create the next step work item
+              Write-Host ""
+              Write-Host "##[section]Creating Step $($nextStep.Number) work item..."
+              
+              $workItemPath = "$(Build.SourcesDirectory)/ado-hackathon/work-items/$($lastCompletedStep.WorkItemFile)"
+              if (Test-Path $workItemPath) {
+                  Write-Host "  Loading description from file: $($lastCompletedStep.WorkItemFile)"
+                  $content = Get-Content $workItemPath -Raw
+                  $html = Convert-MarkdownToHtml -Markdown $content
+              } else {
+                  $html = "<p>See ado-hackathon/work-items/$($lastCompletedStep.WorkItemFile) for instructions</p>"
+              }
+              
+              $nextStepId = Create-WorkItem -Title $lastCompletedStep.NextTitle -Description $html -ParentId $epic.Id
+              
+              if ($nextStepId) {
+                  Write-Host ""
+                  Write-Host "##[section]✅ PROGRESS MADE!"
+                  Write-Host ""
+                  Write-Host "  Completed: Step $($lastCompletedStep.Number)"
+                  Write-Host "  Created: Step $($nextStep.Number) - Work Item #$nextStepId"
+                  Write-Host ""
+                  Write-Host "🎯 Next Steps:"
+                  Write-Host "  1. Go to Boards → Work Items"
+                  Write-Host "  2. Open work item #$nextStepId"
+                  Write-Host "  3. Follow the instructions"
+                  Write-Host "  4. Push your changes when done"
+                  Write-Host ""
+              } else {
+                  Write-Host "##[error]Failed to create Step $($nextStep.Number) work item"
+                  exit 1
+              }
+              
+              exit 0
+          }
+          
+          Write-Host ""
+          Write-Host "##[section]Current Active Step: $($currentActiveStep.Step.Number)"
+          Write-Host "Work Item #$($currentActiveStep.WorkItem.Id): $($currentActiveStep.WorkItem.Title)"
+          Write-Host ""
+          
+          # If files already exist, step is complete
+          $step = $currentActiveStep.Step
+          $workItem = $currentActiveStep.WorkItem
+          $filesExist = $currentActiveStep.FilesExist
+          
+          if (-not $filesExist) {
+              # Double-check files one more time with detailed logging
+              Write-Host "Checking for completion files..."
+              foreach ($file in $step.Files) {
+                  $fullPath = "$(Build.SourcesDirectory)/$file"
+                  Write-Host "  🔍 Checking: $fullPath"
+                  if (Test-Path $fullPath) {
+                      Write-Host "  ✅ FOUND: $file"
+                      $filesExist = $true
+                      break
+                  } else {
+                      Write-Host "  ❌ Not found: $file"
+                  }
+              }
+          }
+          
+          if (-not $filesExist) {
+              Write-Host ""
+              Write-Host "##[section]⏳ Step $($step.Number) is still in progress"
+              Write-Host ""
+              Write-Host "Required files not found. Looking for one of:"
+              foreach ($file in $step.Files) {
+                  Write-Host "  - $file"
+              }
+              Write-Host ""
+              Write-Host "Complete the step and push your changes to continue!"
+              exit 0
+          }
+          
+          # Files exist! Step is complete!
+          Write-Host ""
+          Write-Host "##[section]🎉 Step $($step.Number) is COMPLETE!"
+          Write-Host ""
+          
+          # Try to close the work item
+          Write-Host "Attempting to close work item #$($workItem.Id)..."
+          Close-WorkItem -WorkItemId $workItem.Id
+          
+          # Check if this is the last step
+          if (-not $step.NextTitle) {
+              Write-Host ""
+              Write-Host "##[section]🎉🎉🎉 CONGRATULATIONS! 🎉🎉🎉"
+              Write-Host ""
+              Write-Host "You've completed ALL 7 steps of the AI Agent Deployment Hackathon!"
+              Write-Host ""
+              Write-Host "You've learned:"
+              Write-Host "  ✅ Azure AI Project and OpenAI resource setup"
+              Write-Host "  ✅ Azure DevOps service connections and variable groups"
+              Write-Host "  ✅ CI/CD pipelines for AI agent deployment"
+              Write-Host "  ✅ Multi-environment agent deployments (dev/test/prod)"
+              Write-Host "  ✅ AI agent testing and evaluation"
+              Write-Host "  ✅ AI quality metrics and evaluation"
+              Write-Host "  ✅ Security testing and red team analysis"
+              Write-Host ""
+              Write-Host "You're now ready to deploy AI agents in production! 🤖🚀"
+              Write-Host ""
+              exit 0
+          }
+          
+          # Create the next step (with duplicate prevention)
+          Write-Host "Checking if next step already exists..."
+          $nextStep = $steps[$step.Number]  # Array is 0-indexed, so step.Number gives us the next step
+          $nextStepTitle = $nextStep.Title
+          
+          $existingNext = Find-WorkItem -TitlePattern $nextStepTitle -ExactMatch
+          
+          if ($existingNext) {
+              Write-Host "##[warning]Next step already exists!"
+              Write-Host "  Work Item #$($existingNext.Id): $($existingNext.Title)"
+              Write-Host "  State: $($existingNext.State)"
+              Write-Host ""
+              Write-Host "✅ Progress recorded. Continue with Step $($nextStep.Number)!"
+              exit 0
+          }
+          
+          # Create the next step work item
+          Write-Host "Creating Step $($nextStep.Number) work item..."
+          
+          $workItemPath = "$(Build.SourcesDirectory)/ado-hackathon/work-items/$($step.WorkItemFile)"
+          if (Test-Path $workItemPath) {
+              Write-Host "  Loading description from file: $($step.WorkItemFile)"
+              $content = Get-Content $workItemPath -Raw
+              $html = Convert-MarkdownToHtml -Markdown $content
+          } else {
+              $html = "<p>See ado-hackathon/work-items/$($step.WorkItemFile) for instructions</p>"
+          }
+          
+          $nextStepId = Create-WorkItem -Title $step.NextTitle -Description $html -ParentId $epic.Id
+          
+          if ($nextStepId) {
+              Write-Host ""
+              Write-Host "##[section]✅ PROGRESS MADE!"
+              Write-Host ""
+              Write-Host "  Completed: Step $($step.Number)"
+              Write-Host "  Closed: Work Item #$($workItem.Id)"
+              Write-Host "  Created: Step $($nextStep.Number) - Work Item #$nextStepId"
+              Write-Host ""
+              Write-Host "🎯 Next Steps:"
+              Write-Host "  1. Go to Boards → Work Items"
+              Write-Host "  2. Open work item #$nextStepId"
+              Write-Host "  3. Follow the instructions"
+              Write-Host "  4. Push your changes when done"
+              Write-Host ""
+              $progressMade = $true
+          } else {
+              Write-Host "##[error]Failed to create next step work item"
+              exit 1
+          }
+          
+          Write-Host "##[section]Hackathon Facilitator Complete ✅"

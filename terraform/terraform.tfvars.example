@@ -1,0 +1,58 @@
+# Terraform Variables Configuration
+# Copy this file to terraform.tfvars and customize with your values
+# 
+# Quick Start:
+#   1. Copy: cp terraform.tfvars.example terraform.tfvars
+#   2. Edit terraform.tfvars with your subscription ID
+#   3. Run: terraform init && terraform apply
+
+# =================================================================
+# REQUIRED: Your Azure Subscription ID
+# =================================================================
+# Find your subscription ID:
+#   az account show --query id -o tsv
+subscription_id = "YOUR-SUBSCRIPTION-ID-HERE"
+
+# =================================================================
+# Azure Region Configuration
+# =================================================================
+# Choose a region close to you for better performance
+# Common options: eastus, westus2, westeurope, southeastasia
+location = "eastus"
+
+# =================================================================
+# Resource Naming
+# =================================================================
+# Short prefix for resource names (max 10 chars)
+# A unique 6-character suffix will be automatically added
+# Example: "aiagent" + random suffix = "aiagent-a1b2c3"
+resource_prefix = "aiagent"
+
+# =================================================================
+# Environments
+# =================================================================
+# List of environments to create
+# Each environment gets its own resource group and resources
+environments = ["dev", "test", "prod"]
+
+# =================================================================
+# Azure OpenAI Configuration
+# =================================================================
+# SKU for Azure OpenAI (S0 is standard tier)
+openai_sku = "S0"
+
+# GPT-4o deployment configuration
+gpt4o_deployment_name = "gpt-4o"
+gpt4o_model_version   = "2024-05-13"
+
+# =================================================================
+# Resource Tags
+# =================================================================
+# Optional: Add custom tags to all resources for organization
+tags = {
+  Project     = "AI-Agent-Hackathon"
+  Purpose     = "Learning"
+  Owner       = "YOUR-NAME"
+  CostCenter  = "Education"
+}
+
