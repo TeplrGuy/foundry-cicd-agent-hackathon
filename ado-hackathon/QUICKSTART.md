@@ -52,7 +52,7 @@ This hackathon teaches you how to deploy and test AI agents using Azure DevOps C
 # In Azure DevOps:
 # 1. Go to Repos → Files
 # 2. Click "Import repository"
-# 3. Enter: https://github.com/TeplrGuy/foundrycicdbasic
+# 3. Enter: https://github.com/TeplrGuy/foundry-cicd-agent-hackathon
 # 4. Click "Import"
 ```
 
@@ -129,20 +129,22 @@ Through the 7 steps, you'll:
 
 1. **Azure AI Resources** - Set up Azure AI Projects and OpenAI resources
 2. **Azure DevOps Config** - Configure service connections and variables
-3. **Agent Pipeline** - Create deployment pipeline using `/cicd/createagentpipeline.yml`
+3. **Agent Pipeline** - Create your own deployment pipeline YAML
 4. **Deploy Agents** - Deploy AI agents to dev, test, and prod environments
-5. **Testing Pipeline** - Set up evaluation pipeline using `/cicd/agentconsumptionpipeline.yml`
+5. **Testing Pipeline** - Create your own evaluation pipeline YAML
 6. **Run Evaluation** - Evaluate agent performance and quality
 7. **Security Review** - Review red team security testing results
 
-### Key Pipeline Files
+### Key Python Scripts
 
-The hackathon uses two main pipelines from the `/cicd` folder:
+The hackathon uses these Python scripts that your pipelines will execute:
 
-- **`/cicd/createagentpipeline.yml`** - Deploys AI agents to Azure AI Foundry
-- **`/cicd/agentconsumptionpipeline.yml`** - Tests and evaluates deployed agents
+- **`createagent.py`** - Creates AI agents in Azure AI Foundry
+- **`exagent.py`** - Tests existing deployed agents
+- **`agenteval.py`** - Runs quality evaluation on agents
+- **`redteam.py`** - Performs security red team testing
 
-You'll reference and use these pipelines throughout the hackathon steps.
+You'll create the pipeline YAML files yourself to orchestrate these scripts!
 
 ---
 

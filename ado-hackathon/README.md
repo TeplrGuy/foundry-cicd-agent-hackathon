@@ -21,8 +21,8 @@ This hackathon teaches you how to deploy, test, and secure AI agents using Azure
 
 1. **🔧 Azure AI Infrastructure** - Set up Azure AI Projects and OpenAI resources
 2. **⚙️ CI/CD Configuration** - Configure Azure DevOps for AI agent deployment
-3. **🤖 AI Agent Deployment** - Deploy agents using the `/cicd/createagentpipeline.yml`
-4. **🧪 Agent Evaluation** - Test agents using the `/cicd/agentconsumptionpipeline.yml`
+3. **🤖 AI Agent Deployment** - Build your own deployment pipeline YAML
+4. **🧪 Agent Evaluation** - Build your own testing pipeline YAML
 5. **🔒 Security Testing** - Review red team security vulnerability assessments
 6. **🚀 Multi-Environment Deployment** - Deploy across dev → test → prod
 7. **📊 Quality Assurance** - Evaluate agent performance and quality metrics
@@ -31,7 +31,7 @@ This hackathon teaches you how to deploy, test, and secure AI agents using Azure
 
 - 🎮 **Interactive Learning**: GitHub Skills-style experience in Azure DevOps
 - 🤖 **Real AI Agents**: Deploy actual AI agents to Azure AI Foundry
-- 🔄 **Production Pipelines**: Use real-world CI/CD templates from `/cicd`
+- 🔨 **Build Your Own Pipelines**: No pre-built YAML - you create them!
 - 🔒 **Security First**: Red team testing and vulnerability assessment
 - 📊 **Quality Focused**: Agent evaluation with metrics and benchmarks
 
@@ -77,7 +77,7 @@ The facilitator pipeline (`hackathon-facilitator.yml`):
 2. Create a new project or use an existing one
 3. Navigate to **Repos** → **Files**
 4. Click **Import** or **Import repository**
-5. Use this repository URL: `https://github.com/TeplrGuy/foundrycicdbasic`
+5. Use this repository URL: `https://github.com/TeplrGuy/foundry-cicd-agent-hackathon`
 6. Click **Import**
 
 ⏱️ **Time:** 2 minutes
@@ -124,11 +124,7 @@ Once initialized:
 ## 📚 Repository Structure
 
 ```
-foundrycicdbasic/
-├── cicd/                              # ⭐ Production pipelines
-│   ├── README.md                      # Pipeline documentation
-│   ├── createagentpipeline.yml        # AI agent deployment pipeline
-│   └── agentconsumptionpipeline.yml   # Agent evaluation pipeline
+foundry-cicd-agent-hackathon/
 ├── ado-hackathon/
 │   ├── README.md                      # This file
 │   ├── QUICKSTART.md                  # Quick start guide (recommended!)
@@ -137,14 +133,18 @@ foundrycicdbasic/
 │   └── work-items/                    # Instructions for each step
 │       ├── step-1-azure-resources.md
 │       ├── step-2-azure-devops.md
-│       ├── step-3-create-agent-pipeline.md
+│       ├── step-3-create-agent-pipeline.md   # 🔨 Build your own!
 │       ├── step-4-deploy-agents.md
-│       ├── step-5-create-testing-pipeline.md
+│       ├── step-5-create-testing-pipeline.md # 🔨 Build your own!
 │       ├── step-6-run-evaluation.md
 │       └── step-7-security-redteam.md
+├── cicd/                              # 🔨 YOU CREATE THIS FOLDER!
+│   └── (your pipeline YAML files)     # Build your own pipelines here
+├── terraform/                         # Infrastructure as Code
 ├── agenteval.py                       # Agent evaluation script
 ├── redteam.py                         # Security red team testing
-├── createagent.py                     # Agent creation helper
+├── createagent.py                     # Agent creation script
+├── exagent.py                         # Agent testing script
 └── requirements.txt                   # Python dependencies
 ```
 
@@ -180,20 +180,19 @@ foundrycicdbasic/
 
 ### Step 3: Create Agent Deployment Pipeline 🤖
 
-**Goal:** Set up pipeline to deploy AI agents
+**Goal:** Build your own pipeline to deploy AI agents
 
 **What you'll do:**
-- Reference `/cicd/createagentpipeline.yml`
-- Understand agent deployment workflow
-- Configure pipeline variables
-- Learn about agent creation process
+- Learn Azure Pipelines YAML syntax
+- Create a multi-stage deployment pipeline
+- Configure triggers, stages, and deployment jobs
+- Use variable groups for environment configuration
 
-**Key Pipeline:** `/cicd/createagentpipeline.yml`
-- Deploys AI agents to Azure AI Foundry
-- Handles multi-environment deployment
-- Creates agents in dev, test, and prod
+**Your Challenge:** Create `cicd/createagentpipeline.yml` from scratch!
+- Use the hints and documentation provided
+- No pre-built pipeline - you build it yourself!
 
-**Completion:** Agent deployment pipeline configured
+**Completion:** Agent deployment pipeline created and registered
 
 ---
 
@@ -214,21 +213,20 @@ foundrycicdbasic/
 
 ### Step 5: Create Agent Testing Pipeline 🧪
 
-**Goal:** Set up evaluation pipeline for testing agents
+**Goal:** Build your own pipeline for testing and evaluating agents
 
 **What you'll do:**
-- Reference `/cicd/agentconsumptionpipeline.yml`
-- Understand agent evaluation workflow
-- Configure evaluation parameters
-- Set up quality metrics
+- Learn about parallel jobs in pipelines
+- Create a testing pipeline with multiple stages
+- Configure conditional execution and error handling
+- Publish test artifacts
 
-**Key Pipeline:** `/cicd/agentconsumptionpipeline.yml`
-- Tests deployed AI agents
-- Runs agent evaluation
-- Executes red team security tests
-- Publishes test results as artifacts
+**Your Challenge:** Create `cicd/agentconsumptionpipeline.yml` from scratch!
+- Run evaluation and security tests in parallel
+- Use `continueOnError` for non-blocking tests
+- Publish artifacts even on failure
 
-**Completion:** Evaluation pipeline configured
+**Completion:** Testing pipeline created with parallel jobs
 
 ---
 
@@ -365,7 +363,7 @@ The facilitator monitors work items and progression through the hackathon steps.
 
 ### Agent deployment fails
 
-**Issue:** `/cicd/createagentpipeline.yml` fails to deploy agents
+**Issue:** Your pipeline fails to deploy agents
 
 **Solution:**
 - Check service connection is valid
@@ -373,16 +371,18 @@ The facilitator monitors work items and progression through the hackathon steps.
 - Ensure OpenAI resources are created
 - Check pipeline variables are set correctly
 - Review pipeline logs for specific errors
+- Verify your YAML syntax is correct
 
 ### Evaluation pipeline fails
 
-**Issue:** `/cicd/agentconsumptionpipeline.yml` fails
+**Issue:** Your testing pipeline fails
 
 **Solution:**
 - Ensure agents are deployed first (Step 4)
 - Check agent names match configuration
 - Verify test environment is accessible
 - Review Python dependencies in requirements.txt
+- Check your parallel jobs configuration
 
 ### How do I know what step I'm on?
 
@@ -417,7 +417,7 @@ When you complete all 7 steps:
 
 - **[QUICKSTART.md](QUICKSTART.md)** - Quick start guide (recommended for beginners)
 - **[Work Item Files](work-items/)** - Detailed instructions for each step
-- **[/cicd Pipelines](../cicd/)** - Production-ready pipeline templates
+- **[Azure Pipelines Docs](https://learn.microsoft.com/azure/devops/pipelines/)** - Official documentation
 
 ## 🤝 Contributing
 
