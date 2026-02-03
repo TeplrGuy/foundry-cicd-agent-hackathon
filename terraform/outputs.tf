@@ -22,33 +22,7 @@ output "resource_groups" {
   }
 }
 
-# =============================================================================
-# Service Principal Outputs - Use these to create Azure DevOps Service Connections
-# =============================================================================
 
-output "service_principal_app_ids" {
-  description = "Application (client) IDs for Azure DevOps service connections"
-  value = {
-    for env, app in azuread_application.ado_sp :
-    env => app.client_id
-  }
-}
-
-output "service_principal_object_ids" {
-  description = "Service Principal object IDs"
-  value = {
-    for env, sp in azuread_service_principal.ado_sp :
-    env => sp.object_id
-  }
-}
-
-output "service_principal_names" {
-  description = "Service Principal display names"
-  value = {
-    for env, app in azuread_application.ado_sp :
-    env => app.display_name
-  }
-}
 
 # =============================================================================
 # Azure AI Foundry Outputs
@@ -159,26 +133,9 @@ output "azure_devops_setup_instructions" {
   ║  Unique Suffix: ${random_string.unique_suffix.result}                                           ║
   ╚════════════════════════════════════════════════════════════════╝
   
-  🔐 SERVICE PRINCIPALS CREATED (use for Azure DevOps Service Connections):
+  📋 ENVIRONMENT VARIABLES FOR AZURE DEVOPS VARIABLE GROUPS:
   
-     DEV:  App ID = ${azuread_application.ado_sp["dev"].client_id}
-           Name   = ${azuread_application.ado_sp["dev"].display_name}
-     
-     TEST: App ID = ${azuread_application.ado_sp["test"].client_id}
-           Name   = ${azuread_application.ado_sp["test"].display_name}
-     
-     PROD: App ID = ${azuread_application.ado_sp["prod"].client_id}
-           Name   = ${azuread_application.ado_sp["prod"].display_name}
-  
-  📋 NEXT STEPS - Configure Azure DevOps:
-  
-  1. Create Service Connections using the Service Principals above:
-     - Go to Project Settings → Service Connections
-     - Create "Azure Resource Manager" → "Service principal (manual)"
-     - Use the App IDs above with Workload Identity Federation
-     - Name them: AZURE_SERVICE_CONNECTION_DEV, AZURE_SERVICE_CONNECTION_TEST, AZURE_SERVICE_CONNECTION_PROD
-  
-  2. Create Variable Groups with the following values:
+  Copy these values to create Variable Groups in Azure DevOps:
   
      Variable Group: agent-dev-vars
      ─────────────────────────────────────────────────────
@@ -207,11 +164,29 @@ output "azure_devops_setup_instructions" {
      AZURE_AI_PROJECT_ENDPOINT_PROD = https://${local.resource_prefix}-prod.services.ai.azure.com/api/projects/${local.resource_prefix}-prod-project
      AZURE_AI_MODEL_DEPLOYMENT_NAME = ${var.gpt4o_deployment_name}
   
-  3. Add sensitive keys as secret variables in each variable group:
-     - Run: az cognitiveservices account keys list --name ${local.resource_prefix}-dev-aifoundry --resource-group ${local.resource_prefix}-dev-rg
-     - Add AZURE_OPENAI_KEY_DEV, AZURE_OPENAI_KEY_TEST, AZURE_OPENAI_KEY_PROD
+  🔑 GET OPENAI KEYS FROM AZURE PORTAL:
   
-  4. Continue to Step 2 of the hackathon!
+     For each environment, add the AZURE_OPENAI_KEY as a secret variable:
+     
+     1. Go to Azure Portal → Resource Groups
+     2. Open the AI Services resource (e.g., ${local.resource_prefix}-dev-aifoundry)
+     3. Click "Keys and Endpoint" in the left menu
+     4. Copy KEY 1
+     5. Add to Azure DevOps variable group and click the 🔒 lock icon
+     
+     Or use Azure CLI:
+     az cognitiveservices account keys list --name ${local.resource_prefix}-dev-aifoundry --resource-group ${local.resource_prefix}-dev-rg
+  
+  📋 NEXT STEPS:
+  
+  1. Create Service Connections in Azure DevOps:
+     - Go to Project Settings → Service Connections
+     - Create "Azure Resource Manager" with "Workload Identity Federation (automatic)" 
+     - Name them: AZURE_SERVICE_CONNECTION_DEV, AZURE_SERVICE_CONNECTION_TEST, AZURE_SERVICE_CONNECTION_PROD
+  
+  2. Create Variable Groups using the values above
+  
+  3. Start the hackathon!
   
   EOT
 }

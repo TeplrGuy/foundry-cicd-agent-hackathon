@@ -2,16 +2,9 @@
 
 An interactive, self-paced hackathon for learning AI agent deployment and evaluation using Azure DevOps CI/CD pipelines.
 
-> **🚀 New to the hackathon?** Start with the **[Quick Start Guide →](./QUICKSTART.md)** (5 minutes setup!)
+## ✨ Simplified Setup
 
-## ✨ What's New - Simplified Setup!
-
-**We've dramatically simplified the hackathon setup:**
-
-- **Before:** Create multiple separate pipelines (confusing and error-prone)
-- **Now:** Create just **ONE** facilitator pipeline (simple and reliable!)
-
-The new hackathon facilitator pipeline automatically monitors your progress and creates work items as you complete steps. No more worrying about which pipelines to create!
+Create just **ONE** facilitator pipeline that automatically monitors your progress and creates work items as you complete steps!
 
 ## 🎯 What You'll Learn
 
@@ -19,19 +12,18 @@ This hackathon teaches you how to deploy, test, and secure AI agents using Azure
 
 ### Core Skills
 
-1. **🔧 Azure AI Infrastructure** - Set up Azure AI Projects and OpenAI resources
-2. **⚙️ CI/CD Configuration** - Configure Azure DevOps for AI agent deployment
-3. **🤖 AI Agent Deployment** - Build your own deployment pipeline YAML
-4. **🧪 Agent Evaluation** - Build your own testing pipeline YAML
-5. **🔒 Security Testing** - Review red team security vulnerability assessments
-6. **🚀 Multi-Environment Deployment** - Deploy across dev → test → prod
-7. **📊 Quality Assurance** - Evaluate agent performance and quality metrics
+1. **⚙️ CI/CD Configuration** - Configure Azure DevOps for AI agent deployment
+2. **🤖 AI Agent Deployment** - Deploy agents using the `/cicd/createagentpipeline.yml`
+3. **🚀 Multi-Environment Deployment** - Deploy across dev → test → prod
+4. **🧪 Agent Evaluation** - Test agents using the `/cicd/agentconsumptionpipeline.yml`
+5. **📊 Quality Assurance** - Evaluate agent performance and quality metrics
+6. **🔒 Security Testing** - Review red team security vulnerability assessments
 
 ### What Makes This Unique
 
 - 🎮 **Interactive Learning**: GitHub Skills-style experience in Azure DevOps
 - 🤖 **Real AI Agents**: Deploy actual AI agents to Azure AI Foundry
-- 🔨 **Build Your Own Pipelines**: No pre-built YAML - you create them!
+- 🔄 **Production Pipelines**: Use real-world CI/CD templates from `/cicd`
 - 🔒 **Security First**: Red team testing and vulnerability assessment
 - 📊 **Quality Focused**: Agent evaluation with metrics and benchmarks
 
@@ -39,11 +31,11 @@ This hackathon teaches you how to deploy, test, and secure AI agents using Azure
 
 This hackathon uses Azure DevOps pipelines and work items to guide you through building a complete AI agent deployment solution:
 
-1. **One-Time Setup**: Create the hackathon facilitator pipeline and run it once
-2. **Automated Monitoring**: The facilitator watches for step completion
-3. **Work Item Progression**: New work items are created automatically with next instructions
-4. **Hands-On Learning**: Deploy real AI agents across environments
-5. **Interactive Feedback**: Get immediate feedback as you progress
+1. **Prerequisites**: Deploy Azure AI resources using Terraform (one-time setup)
+2. **One-Time Setup**: Create the hackathon facilitator pipeline and run it once
+3. **Automated Monitoring**: The facilitator watches for step completion
+4. **Work Item Progression**: New work items are created automatically with next instructions
+5. **Hands-On Learning**: Deploy real AI agents across environments
 
 ### The Magic: Hackathon Facilitator Pipeline
 
@@ -53,15 +45,53 @@ The facilitator pipeline (`hackathon-facilitator.yml`):
 - ✅ **Detects** when you complete each step
 - ✅ **Closes** completed step work items
 - ✅ **Creates** next step work items with instructions
-- ✅ **Handles all 7 steps** from one place
+- ✅ **Handles all 6 steps** from one place
 
 ## 📋 Prerequisites
 
-- **Azure DevOps** organization and project
+Before starting the hackathon, you must complete these setup steps:
+
+### Required Tools
+- **Azure CLI** installed and authenticated (`az login`)
+- **Terraform** installed (`terraform --version`)
 - **Azure subscription** with permissions to create resources
-- **Azure AI** access for creating AI Projects and OpenAI resources
-- **Basic knowledge** of YAML, Git, and Azure DevOps
+- **Azure DevOps** organization and project
 - **Python 3.9+** installed locally (for testing)
+- **Basic knowledge** of YAML, Git, and Azure DevOps
+
+### 🔧 Deploy Azure AI Resources (REQUIRED - Do This First!)
+
+Before starting the hackathon, deploy the Azure AI infrastructure using Terraform:
+
+```bash
+# Navigate to terraform directory
+cd terraform
+
+# Run the deployment script (recommended)
+./deploy.sh
+
+# Or manually:
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with your subscription ID
+terraform init
+terraform plan
+terraform apply
+```
+
+This creates **21 Azure resources** across 3 environments (dev, test, prod):
+- Azure AI Foundry (with GPT-4o model)
+- Resource Groups
+- Storage Accounts
+- Key Vaults
+- Application Insights
+- Log Analytics Workspaces
+
+**After deployment:**
+1. **Copy the terraform output** - It contains all the environment variables you'll need for Azure DevOps variable groups
+2. **Get OpenAI keys** from Azure Portal (Keys and Endpoint page for each AI Services resource)
+3. The `azure-resources.md` file is auto-generated with your deployment details
+
+⏱️ **Time:** 10-15 minutes
 
 > **Note:** The hackathon automatically detects your Azure DevOps project's process template and creates compatible work items. It supports:
 > - **Agile** process (creates "User Story" work items)
@@ -69,7 +99,7 @@ The facilitator pipeline (`hackathon-facilitator.yml`):
 > - **Basic** process (creates "Issue" work items)
 > - **CMMI** process (creates "Requirement" work items)
 
-## 🏁 Getting Started (5 Minutes!)
+## 🏁 Getting Started
 
 ### Step 1: Import this Repository to Azure DevOps
 
@@ -77,7 +107,7 @@ The facilitator pipeline (`hackathon-facilitator.yml`):
 2. Create a new project or use an existing one
 3. Navigate to **Repos** → **Files**
 4. Click **Import** or **Import repository**
-5. Use this repository URL: `https://github.com/TeplrGuy/foundry-cicd-agent-hackathon`
+5. Use this repository URL: `https://github.com/TeplrGuy/foundrycicdbasic`
 6. Click **Import**
 
 ⏱️ **Time:** 2 minutes
@@ -96,7 +126,7 @@ The facilitator pipeline (`hackathon-facilitator.yml`):
 
 ⏱️ **Time:** 2 minutes
 
-> **💡 Why just one pipeline?** The facilitator handles everything: initialization, progress detection, and work item creation. No need for multiple pipelines anymore!
+> **💡 Why just one pipeline?** The facilitator handles everything: initialization, progress detection, and work item creation.
 
 ### Step 3: Run the Facilitator Pipeline
 
@@ -114,163 +144,56 @@ Run it once to initialize the hackathon:
 
 Once initialized:
 1. Go to **Boards** → **Work Items**
-2. Find **"Step 1: Setup Azure AI Resources"** work item
+2. Find **"Step 1: Configure Azure DevOps for AI Agent Deployment"** work item
 3. Read the instructions carefully
 4. Complete the step
 5. **Commit and push your changes**
 6. **Facilitator automatically triggers** and creates Step 2!
-7. Repeat for all 7 steps
+7. Repeat for all 6 steps
 
 ## 📚 Repository Structure
 
 ```
-foundry-cicd-agent-hackathon/
+foundrycicdbasic/
+├── cicd/                              # ⭐ Production pipelines
+│   ├── README.md                      # Pipeline documentation
+│   ├── createagentpipeline.yml        # AI agent deployment pipeline
+│   └── agentconsumptionpipeline.yml   # Agent evaluation pipeline
+├── terraform/                         # 📋 Infrastructure as Code (prerequisites)
+│   ├── main.tf                        # Azure resource definitions
+│   ├── variables.tf                   # Configuration variables
+│   ├── outputs.tf                     # Environment variable outputs
+│   └── deploy.sh                      # One-click deployment script
 ├── ado-hackathon/
 │   ├── README.md                      # This file
-│   ├── QUICKSTART.md                  # Quick start guide (recommended!)
 │   ├── pipelines/
 │   │   └── hackathon-facilitator.yml  # ⭐ The ONE pipeline you need
 │   └── work-items/                    # Instructions for each step
-│       ├── step-1-azure-resources.md
-│       ├── step-2-azure-devops.md
-│       ├── step-3-create-agent-pipeline.md   # 🔨 Build your own!
-│       ├── step-4-deploy-agents.md
-│       ├── step-5-create-testing-pipeline.md # 🔨 Build your own!
-│       ├── step-6-run-evaluation.md
-│       └── step-7-security-redteam.md
-├── cicd/                              # 🔨 YOU CREATE THIS FOLDER!
-│   └── (your pipeline YAML files)     # Build your own pipelines here
-├── terraform/                         # Infrastructure as Code
+│       ├── step-1-azure-devops.md
+│       ├── step-2-create-agent-pipeline.md
+│       ├── step-3-deploy-agents.md
+│       ├── step-4-create-testing-pipeline.md
+│       ├── step-5-run-evaluation.md
+│       └── step-6-security-redteam.md
 ├── agenteval.py                       # Agent evaluation script
 ├── redteam.py                         # Security red team testing
-├── createagent.py                     # Agent creation script
-├── exagent.py                         # Agent testing script
+├── createagent.py                     # Agent creation helper
 └── requirements.txt                   # Python dependencies
 ```
 
 ## 🎓 Step-by-Step Journey
 
-### Step 1: Setup Azure AI Resources 🔧
+The hackathon facilitator automatically creates work items with detailed instructions. If you need to follow steps manually, use these links:
 
-**Goal:** Create Azure AI infrastructure for agent deployment
-
-**What you'll do:**
-- Create 3 resource groups (dev, test, prod)
-- Set up Azure AI Projects in each environment
-- Create Azure OpenAI resources
-- Note endpoint URLs for later use
-
-**Completion:** Azure AI resources created and documented
-
----
-
-### Step 2: Configure Azure DevOps ⚙️
-
-**Goal:** Set up Azure DevOps for AI agent deployment
-
-**What you'll do:**
-- Create service connections to Azure
-- Set up variable groups with AI project endpoints
-- Configure pipeline permissions
-- Store OpenAI connection strings
-
-**Completion:** Azure DevOps configured with service connections
-
----
-
-### Step 3: Create Agent Deployment Pipeline 🤖
-
-**Goal:** Build your own pipeline to deploy AI agents
-
-**What you'll do:**
-- Learn Azure Pipelines YAML syntax
-- Create a multi-stage deployment pipeline
-- Configure triggers, stages, and deployment jobs
-- Use variable groups for environment configuration
-
-**Your Challenge:** Create `cicd/createagentpipeline.yml` from scratch!
-- Use the hints and documentation provided
-- No pre-built pipeline - you build it yourself!
-
-**Completion:** Agent deployment pipeline created and registered
-
----
-
-### Step 4: Deploy AI Agents to Environments 🚀
-
-**Goal:** Deploy agents across all environments
-
-**What you'll do:**
-- Run agent deployment pipeline
-- Deploy to dev environment
-- Promote to test environment
-- Deploy to production environment
-- Verify agents in Azure AI Foundry
-
-**Completion:** Agents deployed to all 3 environments
-
----
-
-### Step 5: Create Agent Testing Pipeline 🧪
-
-**Goal:** Build your own pipeline for testing and evaluating agents
-
-**What you'll do:**
-- Learn about parallel jobs in pipelines
-- Create a testing pipeline with multiple stages
-- Configure conditional execution and error handling
-- Publish test artifacts
-
-**Your Challenge:** Create `cicd/agentconsumptionpipeline.yml` from scratch!
-- Run evaluation and security tests in parallel
-- Use `continueOnError` for non-blocking tests
-- Publish artifacts even on failure
-
-**Completion:** Testing pipeline created with parallel jobs
-
----
-
-### Step 6: Run Agent Evaluation 📊
-
-**Goal:** Evaluate agent performance and quality
-
-**What you'll do:**
-- Run agent evaluation pipeline
-- Review evaluation metrics
-- Analyze agent responses
-- Check quality scores
-- Download evaluation artifacts
-
-**Metrics evaluated:**
-- Response quality
-- Accuracy
-- Latency
-- Token usage
-- User satisfaction simulation
-
-**Completion:** Evaluation completed with metrics reviewed
-
----
-
-### Step 7: Review Security Red Team Results 🔒
-
-**Goal:** Assess AI agent security vulnerabilities
-
-**What you'll do:**
-- Download red team results artifact
-- Review security test findings
-- Understand vulnerability types
-- Learn mitigation strategies
-- Document security posture
-
-**Security tests:**
-- Prompt injection attempts
-- Jailbreak attempts
-- Data leakage tests
-- Harmful content generation
-- Context manipulation
-
-**Completion:** Security assessment reviewed and documented
+| Step | Title | Description |
+|------|-------|-------------|
+| **Prerequisites** | [Deploy Azure AI Resources](../terraform/README.md) | Run Terraform to create Azure AI infrastructure |
+| **Step 1** | [Configure Azure DevOps](work-items/step-1-azure-devops.md) | Set up service connections, variable groups, and environments |
+| **Step 2** | [Create Agent Pipeline](work-items/step-2-create-agent-pipeline.md) | Build your first CI/CD pipeline for agent deployment |
+| **Step 3** | [Deploy Agents](work-items/step-3-deploy-agents.md) | Run pipeline and deploy agents to dev/test/prod |
+| **Step 4** | [Create Testing Pipeline](work-items/step-4-create-testing-pipeline.md) | Build evaluation and security testing pipeline |
+| **Step 5** | [Run Evaluation](work-items/step-5-run-evaluation.md) | Execute agent quality evaluation and review metrics |
+| **Step 6** | [Security Red Team](work-items/step-6-security-redteam.md) | Review security vulnerabilities and complete hackathon |
 
 ---
 
@@ -283,7 +206,7 @@ User runs facilitator pipeline (manual)
   ↓
 Facilitator checks: Is Epic created?
   ↓ No
-Creates Epic: "🚀 Azure DevOps AI Agent Deployment Hackathon"
+Creates Epic: "🤖 AI Agent Deployment Hackathon"
   ↓
 Creates Step 1 work item with instructions
   ↓
@@ -293,7 +216,7 @@ User starts working on Step 1
 ### Subsequent Runs (Automatic Progression)
 
 ```
-User completes Step 1 (creates Azure AI resources)
+User completes Step 1 (configures Azure DevOps)
   ↓
 User pushes to main branch
   ↓
@@ -356,14 +279,14 @@ The facilitator monitors work items and progression through the hackathon steps.
 **Issue:** Pipelines fail because AI endpoints aren't configured
 
 **Solution:**
-- Complete Step 1 fully: Create all Azure AI Projects
-- Complete Step 2 fully: Set up service connections and variables
+- Complete Prerequisites: Deploy Azure AI resources using Terraform
+- Complete Step 1 fully: Set up service connections and variables
 - Verify endpoints in Azure AI Foundry
 - Check variable groups exist in Azure DevOps
 
 ### Agent deployment fails
 
-**Issue:** Your pipeline fails to deploy agents
+**Issue:** `/cicd/createagentpipeline.yml` fails to deploy agents
 
 **Solution:**
 - Check service connection is valid
@@ -371,18 +294,16 @@ The facilitator monitors work items and progression through the hackathon steps.
 - Ensure OpenAI resources are created
 - Check pipeline variables are set correctly
 - Review pipeline logs for specific errors
-- Verify your YAML syntax is correct
 
 ### Evaluation pipeline fails
 
-**Issue:** Your testing pipeline fails
+**Issue:** `/cicd/agentconsumptionpipeline.yml` fails
 
 **Solution:**
-- Ensure agents are deployed first (Step 4)
+- Ensure agents are deployed first (Step 3)
 - Check agent names match configuration
 - Verify test environment is accessible
 - Review Python dependencies in requirements.txt
-- Check your parallel jobs configuration
 
 ### How do I know what step I'm on?
 
@@ -399,7 +320,7 @@ The facilitator monitors work items and progression through the hackathon steps.
 
 ## 🎉 Completion
 
-When you complete all 7 steps:
+When you complete all 6 steps:
 - The facilitator will show a celebration message
 - Your Epic will be updated with completion status
 - You'll have a complete AI agent deployment pipeline!
@@ -415,9 +336,9 @@ When you complete all 7 steps:
 
 ## 📖 Additional Documentation
 
-- **[QUICKSTART.md](QUICKSTART.md)** - Quick start guide (recommended for beginners)
 - **[Work Item Files](work-items/)** - Detailed instructions for each step
-- **[Azure Pipelines Docs](https://learn.microsoft.com/azure/devops/pipelines/)** - Official documentation
+- **[/cicd Pipelines](../cicd/)** - Production-ready pipeline templates
+- **[/terraform](../terraform/)** - Infrastructure as Code for Azure resources
 
 ## 🤝 Contributing
 
@@ -429,4 +350,4 @@ This project is licensed under the MIT License.
 
 ---
 
-**Ready to start?** Head to the **[Quick Start Guide](./QUICKSTART.md)** and begin your AI agent deployment journey! 🚀
+**Ready to start?** Run the Terraform scripts in `/terraform`, then create the facilitator pipeline and begin your AI agent deployment journey! 🚀

@@ -323,10 +323,10 @@ stages:
               Write-Host "##[section]Creating Parent Epic"
               $epicDescription = @"
           <h1>Welcome to the AI Agent Deployment Hackathon! 🤖🚀</h1>
-          <p>This Epic tracks your progress through all 7 steps of learning to deploy AI agents with Azure DevOps CI/CD.</p>
+          <p>This Epic tracks your progress through all 6 steps of learning to deploy AI agents with Azure DevOps CI/CD.</p>
+          <p><strong>📋 Prerequisites:</strong> Before starting, deploy Azure AI resources using the terraform scripts in the <code>/terraform</code> folder. See the README for instructions.</p>
           <h2>Your Journey:</h2>
           <ol>
-          <li>Setup Azure AI Resources (AI Projects, OpenAI, Service Principal)</li>
           <li>Configure Azure DevOps (Service Connections, Variable Groups, Environments)</li>
           <li>Create Agent Creation Pipeline (cicd/createagentpipeline.yml)</li>
           <li>Deploy Agents Across Environments (Dev → Test → Prod)</li>
@@ -350,7 +350,7 @@ stages:
               Write-Host "##[section]Creating Step 1 Work Item"
               
               # Check if Step 1 already exists
-              $existingStep1 = Find-WorkItem -TitlePattern "Step 1: Setup Azure AI Resources" -ExactMatch
+              $existingStep1 = Find-WorkItem -TitlePattern "Step 1: Configure Azure DevOps for AI Agent Deployment" -ExactMatch
               if ($existingStep1) {
                   Write-Host "##[warning]Step 1 work item already exists (#$($existingStep1.Id)). Skipping creation."
                   Write-Host ""
@@ -359,15 +359,15 @@ stages:
               }
               
               # Read Step 1 instructions
-              $step1Path = "$(Build.SourcesDirectory)/ado-hackathon/work-items/step-1-azure-resources.md"
+              $step1Path = "$(Build.SourcesDirectory)/ado-hackathon/work-items/step-1-azure-devops.md"
               if (Test-Path $step1Path) {
                   $step1Content = Get-Content $step1Path -Raw
                   $step1Html = Convert-MarkdownToHtml -Markdown $step1Content
               } else {
-                  $step1Html = "<p>See ado-hackathon/work-items/step-1-azure-resources.md for instructions</p>"
+                  $step1Html = "<p>See ado-hackathon/work-items/step-1-azure-devops.md for instructions</p>"
               }
               
-              $step1Id = Create-WorkItem -Title "Step 1: Setup Azure AI Resources" -Description $step1Html -ParentId $epicId
+              $step1Id = Create-WorkItem -Title "Step 1: Configure Azure DevOps for AI Agent Deployment" -Description $step1Html -ParentId $epicId
               
               if ($step1Id) {
                   Write-Host ""
@@ -395,56 +395,48 @@ stages:
           $steps = @(
               @{
                   Number = 1
-                  Title = "Step 1: Setup Azure AI Resources"
+                  Title = "Step 1: Configure Azure DevOps for AI Agent Deployment"
                   SearchPattern = "Step 1"
-                  NextTitle = "Step 2: Configure Azure DevOps for AI Agent Deployment"
-                  Files = @("azure-resources.md")
-                  WorkItemFile = "step-2-azure-devops.md"
+                  NextTitle = "Step 2: Build Your Agent Deployment Pipeline 🎓"
+                  Files = @("azure-devops-config.md")
+                  WorkItemFile = "step-2-create-agent-pipeline.md"
               },
               @{
                   Number = 2
-                  Title = "Step 2: Configure Azure DevOps for AI Agent Deployment"
+                  Title = "Step 2: Build Your Agent Deployment Pipeline 🎓"
                   SearchPattern = "Step 2"
-                  NextTitle = "Step 3: Build Your Agent Deployment Pipeline 🎓"
-                  Files = @("azure-devops-config.md")
-                  WorkItemFile = "step-3-create-agent-pipeline.md"
+                  NextTitle = "Step 3: Run Pipeline & Deploy Agents 🚀"
+                  Files = @("pipeline-1-created.md")
+                  WorkItemFile = "step-3-deploy-agents.md"
               },
               @{
                   Number = 3
-                  Title = "Step 3: Build Your Agent Deployment Pipeline 🎓"
+                  Title = "Step 3: Run Pipeline & Deploy Agents 🚀"
                   SearchPattern = "Step 3"
-                  NextTitle = "Step 4: Run Pipeline & Deploy Agents 🚀"
-                  Files = @("pipeline-1-created.md")
-                  WorkItemFile = "step-4-deploy-agents.md"
+                  NextTitle = "Step 4: Build Your Testing Pipeline 🧪"
+                  Files = @("agents-deployed.md")
+                  WorkItemFile = "step-4-create-testing-pipeline.md"
               },
               @{
                   Number = 4
-                  Title = "Step 4: Run Pipeline & Deploy Agents 🚀"
+                  Title = "Step 4: Build Your Testing Pipeline 🧪"
                   SearchPattern = "Step 4"
-                  NextTitle = "Step 5: Build Your Testing Pipeline 🧪"
-                  Files = @("agents-deployed.md")
-                  WorkItemFile = "step-5-create-testing-pipeline.md"
+                  NextTitle = "Step 5: Run Evaluation & Review Metrics 📊"
+                  Files = @("pipeline-2-created.md")
+                  WorkItemFile = "step-5-run-evaluation.md"
               },
               @{
                   Number = 5
-                  Title = "Step 5: Build Your Testing Pipeline 🧪"
+                  Title = "Step 5: Run Evaluation & Review Metrics 📊"
                   SearchPattern = "Step 5"
-                  NextTitle = "Step 6: Run Evaluation & Review Metrics 📊"
-                  Files = @("pipeline-2-created.md")
-                  WorkItemFile = "step-6-run-evaluation.md"
+                  NextTitle = "Step 6: Security Red Team Analysis 🔒"
+                  Files = @("evaluation-complete.md")
+                  WorkItemFile = "step-6-security-redteam.md"
               },
               @{
                   Number = 6
-                  Title = "Step 6: Run Evaluation & Review Metrics 📊"
+                  Title = "Step 6: Security Red Team Analysis 🔒"
                   SearchPattern = "Step 6"
-                  NextTitle = "Step 7: Security Red Team Analysis 🔒"
-                  Files = @("evaluation-complete.md")
-                  WorkItemFile = "step-7-security-redteam.md"
-              },
-              @{
-                  Number = 7
-                  Title = "Step 7: Security Red Team Analysis 🔒"
-                  SearchPattern = "Step 7"
                   NextTitle = $null
                   Files = @("hackathon-complete.md")
                   WorkItemFile = $null
@@ -454,226 +446,45 @@ stages:
           Write-Host "##[section]Step 2: Check for completed steps"
           Write-Host ""
           
-          # NEW APPROACH: Use file existence as source of truth, not work item state
-          $progressMade = $false
-          $currentActiveStep = $null
+          # FILE-BASED APPROACH: Use file existence as the source of truth
+          # This allows users to start where they left off regardless of work item state
           
-          # First pass: Scan all steps and check BOTH work item state AND file existence
-          Write-Host "Scanning all steps to find current progress..."
+          Write-Host "Scanning completion files to determine progress..."
+          Write-Host ""
+          
+          # First, determine which step the user is currently on based on files
+          $currentStepNumber = 1  # Default to step 1
+          
           foreach ($step in $steps) {
-              $exactTitle = $step.Title
-              $workItem = Find-WorkItem -TitlePattern $exactTitle -ExactMatch
-              
-              if (-not $workItem) {
-                  Write-Host "  Step $($step.Number): Work item not created yet"
-                  # If this is step 1 and it doesn't exist, something is wrong
-                  if ($step.Number -eq 1) {
-                      Write-Host "##[error]Step 1 should already exist! Something went wrong in initialization."
-                      exit 1
-                  }
-                  # This is the first step without a work item - previous step needs to create it
-                  # But first, check if previous step was actually complete
-                  break
-              }
-              
-              # Check if step is complete by work item state, tags, OR file existence
-              $workItemComplete = $workItem.State -eq "Done" -or $workItem.State -eq "Closed" -or $workItem.State -eq "Resolved"
-              if (-not $workItemComplete -and $workItem.Tags) {
-                  $workItemComplete = $workItem.Tags -like "*Completed*"
-              }
-              
-              # Check if completion files exist
               $filesExist = $false
               foreach ($file in $step.Files) {
                   $fullPath = "$(Build.SourcesDirectory)/$file"
                   if (Test-Path $fullPath) {
                       $filesExist = $true
+                      Write-Host "  ✅ Step $($step.Number) complete: Found $file"
                       break
                   }
               }
               
-              $isActuallyComplete = $workItemComplete -or $filesExist
-              $statusIcon = if($isActuallyComplete){'✅'}else{'📋'}
-              $statusText = if($filesExist){"Files exist"}elseif($workItemComplete){"Work item closed"}else{"In progress"}
-              
-              Write-Host "  Step $($step.Number): Work Item #$($workItem.Id) - $statusText $statusIcon"
-              
-              if (-not $isActuallyComplete) {
-                  # This is our active step - files don't exist yet
-                  $currentActiveStep = @{
-                      Step = $step
-                      WorkItem = $workItem
-                      FilesExist = $false
-                  }
+              if ($filesExist) {
+                  # This step is complete, move to next
+                  $currentStepNumber = $step.Number + 1
+              } else {
+                  # This step is not complete - this is where user should be
+                  Write-Host "  📋 Step $($step.Number) in progress: Waiting for $($step.Files -join ' or ')"
                   break
               }
-              
-              # Files exist - this step is complete, continue to check next step
-              # (Don't break here - let the loop continue to find the first incomplete step)
-          }
-          
-          if (-not $currentActiveStep) {
-              # No incomplete step found - either all are done or we need to create the next one
-              Write-Host ""
-              Write-Host "All existing step work items have their completion files!"
-              Write-Host ""
-              
-              # Find the last completed step and create the next one
-              $lastCompletedStep = $null
-              foreach ($step in $steps) {
-                  $workItem = Find-WorkItem -TitlePattern $step.Title -ExactMatch
-                  if ($workItem) {
-                      # Check if files exist for this step
-                      $filesExist = $false
-                      foreach ($file in $step.Files) {
-                          $fullPath = "$(Build.SourcesDirectory)/$file"
-                          if (Test-Path $fullPath) {
-                              $filesExist = $true
-                              break
-                          }
-                      }
-                      if ($filesExist) {
-                          $lastCompletedStep = $step
-                      }
-                  } else {
-                      # This step doesn't have a work item - need to create it
-                      break
-                  }
-              }
-              
-              if (-not $lastCompletedStep) {
-                  Write-Host "##[error]Could not determine last completed step"
-                  exit 1
-              }
-              
-              Write-Host "Last completed step: Step $($lastCompletedStep.Number)"
-              
-              # Try to close the last completed step's work item
-              $lastWorkItem = Find-WorkItem -TitlePattern $lastCompletedStep.Title -ExactMatch
-              if ($lastWorkItem) {
-                  Write-Host "Attempting to mark Step $($lastCompletedStep.Number) work item as complete..."
-                  Close-WorkItem -WorkItemId $lastWorkItem.Id
-              }
-              
-              # Check if this was the last step
-              if (-not $lastCompletedStep.NextTitle) {
-                  Write-Host ""
-                  Write-Host "##[section]🎉🎉🎉 CONGRATULATIONS! 🎉🎉🎉"
-                  Write-Host "You've completed ALL 7 steps of the AI Agent Deployment Hackathon!"
-                  exit 0
-              }
-              
-              # Create the next step
-              $nextStepNumber = $lastCompletedStep.Number + 1
-              $nextStep = $steps | Where-Object { $_.Number -eq $nextStepNumber }
-              
-              if (-not $nextStep) {
-                  Write-Host "##[error]Could not find next step definition"
-                  exit 1
-              }
-              
-              # Check if next step already exists
-              $existingNext = Find-WorkItem -TitlePattern $nextStep.Title -ExactMatch
-              if ($existingNext) {
-                  Write-Host "Step $($nextStep.Number) work item already exists (#$($existingNext.Id))"
-                  Write-Host ""
-                  Write-Host "✅ All caught up! Continue with Step $($nextStep.Number)!"
-                  exit 0
-              }
-              
-              # Create the next step work item
-              Write-Host ""
-              Write-Host "##[section]Creating Step $($nextStep.Number) work item..."
-              
-              $workItemPath = "$(Build.SourcesDirectory)/ado-hackathon/work-items/$($lastCompletedStep.WorkItemFile)"
-              if (Test-Path $workItemPath) {
-                  Write-Host "  Loading description from file: $($lastCompletedStep.WorkItemFile)"
-                  $content = Get-Content $workItemPath -Raw
-                  $html = Convert-MarkdownToHtml -Markdown $content
-              } else {
-                  $html = "<p>See ado-hackathon/work-items/$($lastCompletedStep.WorkItemFile) for instructions</p>"
-              }
-              
-              $nextStepId = Create-WorkItem -Title $lastCompletedStep.NextTitle -Description $html -ParentId $epic.Id
-              
-              if ($nextStepId) {
-                  Write-Host ""
-                  Write-Host "##[section]✅ PROGRESS MADE!"
-                  Write-Host ""
-                  Write-Host "  Completed: Step $($lastCompletedStep.Number)"
-                  Write-Host "  Created: Step $($nextStep.Number) - Work Item #$nextStepId"
-                  Write-Host ""
-                  Write-Host "🎯 Next Steps:"
-                  Write-Host "  1. Go to Boards → Work Items"
-                  Write-Host "  2. Open work item #$nextStepId"
-                  Write-Host "  3. Follow the instructions"
-                  Write-Host "  4. Push your changes when done"
-                  Write-Host ""
-              } else {
-                  Write-Host "##[error]Failed to create Step $($nextStep.Number) work item"
-                  exit 1
-              }
-              
-              exit 0
           }
           
           Write-Host ""
-          Write-Host "##[section]Current Active Step: $($currentActiveStep.Step.Number)"
-          Write-Host "Work Item #$($currentActiveStep.WorkItem.Id): $($currentActiveStep.WorkItem.Title)"
-          Write-Host ""
           
-          # If files already exist, step is complete
-          $step = $currentActiveStep.Step
-          $workItem = $currentActiveStep.WorkItem
-          $filesExist = $currentActiveStep.FilesExist
-          
-          if (-not $filesExist) {
-              # Double-check files one more time with detailed logging
-              Write-Host "Checking for completion files..."
-              foreach ($file in $step.Files) {
-                  $fullPath = "$(Build.SourcesDirectory)/$file"
-                  Write-Host "  🔍 Checking: $fullPath"
-                  if (Test-Path $fullPath) {
-                      Write-Host "  ✅ FOUND: $file"
-                      $filesExist = $true
-                      break
-                  } else {
-                      Write-Host "  ❌ Not found: $file"
-                  }
-              }
-          }
-          
-          if (-not $filesExist) {
-              Write-Host ""
-              Write-Host "##[section]⏳ Step $($step.Number) is still in progress"
-              Write-Host ""
-              Write-Host "Required files not found. Looking for one of:"
-              foreach ($file in $step.Files) {
-                  Write-Host "  - $file"
-              }
-              Write-Host ""
-              Write-Host "Complete the step and push your changes to continue!"
-              exit 0
-          }
-          
-          # Files exist! Step is complete!
-          Write-Host ""
-          Write-Host "##[section]🎉 Step $($step.Number) is COMPLETE!"
-          Write-Host ""
-          
-          # Try to close the work item
-          Write-Host "Attempting to close work item #$($workItem.Id)..."
-          Close-WorkItem -WorkItemId $workItem.Id
-          
-          # Check if this is the last step
-          if (-not $step.NextTitle) {
-              Write-Host ""
+          # Check if all steps are complete
+          if ($currentStepNumber -gt $steps.Count) {
               Write-Host "##[section]🎉🎉🎉 CONGRATULATIONS! 🎉🎉🎉"
               Write-Host ""
-              Write-Host "You've completed ALL 7 steps of the AI Agent Deployment Hackathon!"
+              Write-Host "You've completed ALL 6 steps of the AI Agent Deployment Hackathon!"
               Write-Host ""
               Write-Host "You've learned:"
-              Write-Host "  ✅ Azure AI Project and OpenAI resource setup"
               Write-Host "  ✅ Azure DevOps service connections and variable groups"
               Write-Host "  ✅ CI/CD pipelines for AI agent deployment"
               Write-Host "  ✅ Multi-environment agent deployments (dev/test/prod)"
@@ -682,58 +493,73 @@ stages:
               Write-Host "  ✅ Security testing and red team analysis"
               Write-Host ""
               Write-Host "You're now ready to deploy AI agents in production! 🤖🚀"
-              Write-Host ""
               exit 0
           }
           
-          # Create the next step (with duplicate prevention)
-          Write-Host "Checking if next step already exists..."
-          $nextStep = $steps[$step.Number]  # Array is 0-indexed, so step.Number gives us the next step
-          $nextStepTitle = $nextStep.Title
+          $currentStep = $steps | Where-Object { $_.Number -eq $currentStepNumber }
+          Write-Host "##[section]Current Step: $currentStepNumber - $($currentStep.Title)"
+          Write-Host ""
           
-          $existingNext = Find-WorkItem -TitlePattern $nextStepTitle -ExactMatch
+          # Check if work item exists for current step
+          $workItem = Find-WorkItem -TitlePattern $currentStep.Title -ExactMatch
           
-          if ($existingNext) {
-              Write-Host "##[warning]Next step already exists!"
-              Write-Host "  Work Item #$($existingNext.Id): $($existingNext.Title)"
-              Write-Host "  State: $($existingNext.State)"
+          if ($workItem) {
+              Write-Host "✅ Work item #$($workItem.Id) already exists for Step $currentStepNumber"
               Write-Host ""
-              Write-Host "✅ Progress recorded. Continue with Step $($nextStep.Number)!"
+              Write-Host "🎯 Continue working on Step $currentStepNumber!"
+              Write-Host "   Required file: $($currentStep.Files -join ' or ')"
+              Write-Host "   When complete, commit and push to main branch."
               exit 0
           }
           
-          # Create the next step work item
-          Write-Host "Creating Step $($nextStep.Number) work item..."
+          # Work item doesn't exist - create it
+          Write-Host "Creating work item for Step $currentStepNumber..."
           
-          $workItemPath = "$(Build.SourcesDirectory)/ado-hackathon/work-items/$($step.WorkItemFile)"
-          if (Test-Path $workItemPath) {
-              Write-Host "  Loading description from file: $($step.WorkItemFile)"
-              $content = Get-Content $workItemPath -Raw
+          # Determine which markdown file to use for the work item description
+          $workItemFile = "step-$currentStepNumber-*.md"
+          $workItemPath = Get-ChildItem -Path "$(Build.SourcesDirectory)/ado-hackathon/work-items/" -Filter "step-$currentStepNumber-*.md" | Select-Object -First 1
+          
+          if ($workItemPath) {
+              Write-Host "  Loading description from: $($workItemPath.Name)"
+              $content = Get-Content $workItemPath.FullName -Raw
               $html = Convert-MarkdownToHtml -Markdown $content
           } else {
-              $html = "<p>See ado-hackathon/work-items/$($step.WorkItemFile) for instructions</p>"
+              $html = "<p>See ado-hackathon/work-items/ for Step $currentStepNumber instructions</p>"
           }
           
-          $nextStepId = Create-WorkItem -Title $step.NextTitle -Description $html -ParentId $epic.Id
+          $newWorkItemId = Create-WorkItem -Title $currentStep.Title -Description $html -ParentId $epic.Id
           
-          if ($nextStepId) {
+          if ($newWorkItemId) {
               Write-Host ""
-              Write-Host "##[section]✅ PROGRESS MADE!"
+              Write-Host "##[section]✅ Work Item Created!"
               Write-Host ""
-              Write-Host "  Completed: Step $($step.Number)"
-              Write-Host "  Closed: Work Item #$($workItem.Id)"
-              Write-Host "  Created: Step $($nextStep.Number) - Work Item #$nextStepId"
+              Write-Host "  Step: $currentStepNumber"
+              Write-Host "  Work Item: #$newWorkItemId"
+              Write-Host "  Title: $($currentStep.Title)"
               Write-Host ""
               Write-Host "🎯 Next Steps:"
               Write-Host "  1. Go to Boards → Work Items"
-              Write-Host "  2. Open work item #$nextStepId"
+              Write-Host "  2. Open work item #$newWorkItemId"
               Write-Host "  3. Follow the instructions"
-              Write-Host "  4. Push your changes when done"
+              Write-Host "  4. Create the required file: $($currentStep.Files -join ' or ')"
+              Write-Host "  5. Commit and push to main branch"
               Write-Host ""
-              $progressMade = $true
           } else {
-              Write-Host "##[error]Failed to create next step work item"
-              exit 1
+              Write-Host "##[warning]Could not create work item, but you can still proceed!"
+              Write-Host "  Follow instructions in: ado-hackathon/work-items/step-$currentStepNumber-*.md"
           }
           
+          # Also close any previous step work items that are complete
+          Write-Host ""
+          Write-Host "Checking for completed steps to close..."
+          for ($i = 1; $i -lt $currentStepNumber; $i++) {
+              $prevStep = $steps | Where-Object { $_.Number -eq $i }
+              $prevWorkItem = Find-WorkItem -TitlePattern $prevStep.Title -ExactMatch
+              if ($prevWorkItem -and $prevWorkItem.State -ne "Done" -and $prevWorkItem.State -ne "Closed" -and $prevWorkItem.State -ne "Resolved") {
+                  Write-Host "  Closing Step $i work item #$($prevWorkItem.Id)..."
+                  Close-WorkItem -WorkItemId $prevWorkItem.Id
+              }
+          }
+          
+          Write-Host ""
           Write-Host "##[section]Hackathon Facilitator Complete ✅"
