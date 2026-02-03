@@ -6,7 +6,7 @@ Agent framework and Microsoft Foundry CI/CD using basic
 
 **Learn Azure DevOps CI/CD hands-on with our interactive hackathon!**
 
-We've created a step-by-step, self-paced learning experience that teaches you how to build production-ready CI/CD pipelines for AI agent deployment. The hackathon automatically guides you through 7 progressive steps using Azure DevOps pipelines and work items.
+We've created a step-by-step, self-paced learning experience that teaches you how to build production-ready CI/CD pipelines for AI agent deployment. The hackathon automatically guides you through 6 progressive steps using Azure DevOps pipelines and work items.
 
 ### 🚀 Start the Hackathon
 
@@ -14,13 +14,15 @@ We've created a step-by-step, self-paced learning experience that teaches you ho
 
 What you'll learn:
 - Infrastructure as Code with Terraform
-- Building CI/CD pipelines in Azure DevOps
+- Building CI/CD pipelines in Azure DevOps from scratch
 - Testing and evaluation strategies
 - Multi-environment deployments (dev → test → prod)
 - Approval gates and production best practices
 - Security testing and DevSecOps
 
-**Perfect for:** Developers and DevOps engineers new to Azure DevOps who want hands-on experience with CI/CD pipelines.
+**Perfect for:** Developers and DevOps engineers new to Azure DevOps who want hands-on experience building CI/CD pipelines.
+
+> **Note:** This is a hackathon - you will create your own pipeline YAML files! No pre-built pipelines are provided.
 
 ---
 

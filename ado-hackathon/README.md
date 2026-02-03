@@ -13,9 +13,9 @@ This hackathon teaches you how to deploy, test, and secure AI agents using Azure
 ### Core Skills
 
 1. **⚙️ CI/CD Configuration** - Configure Azure DevOps for AI agent deployment
-2. **🤖 AI Agent Deployment** - Deploy agents using the `/cicd/createagentpipeline.yml`
+2. **🤖 AI Agent Deployment** - Build your own deployment pipeline from scratch
 3. **🚀 Multi-Environment Deployment** - Deploy across dev → test → prod
-4. **🧪 Agent Evaluation** - Test agents using the `/cicd/agentconsumptionpipeline.yml`
+4. **🧪 Agent Evaluation** - Build your own testing and evaluation pipeline
 5. **📊 Quality Assurance** - Evaluate agent performance and quality metrics
 6. **🔒 Security Testing** - Review red team security vulnerability assessments
 
@@ -23,7 +23,7 @@ This hackathon teaches you how to deploy, test, and secure AI agents using Azure
 
 - 🎮 **Interactive Learning**: GitHub Skills-style experience in Azure DevOps
 - 🤖 **Real AI Agents**: Deploy actual AI agents to Azure AI Foundry
-- 🔄 **Production Pipelines**: Use real-world CI/CD templates from `/cicd`
+- 🔨 **Build Your Own Pipelines**: Create CI/CD pipelines from scratch - no pre-built templates!
 - 🔒 **Security First**: Red team testing and vulnerability assessment
 - 📊 **Quality Focused**: Agent evaluation with metrics and benchmarks
 
@@ -154,11 +154,12 @@ Once initialized:
 ## 📚 Repository Structure
 
 ```
-foundrycicdbasic/
-├── cicd/                              # ⭐ Production pipelines
-│   ├── README.md                      # Pipeline documentation
-│   ├── createagentpipeline.yml        # AI agent deployment pipeline
-│   └── agentconsumptionpipeline.yml   # Agent evaluation pipeline
+ai-agent-hackathon-student/
+├── cicd/                              # 🔨 YOU CREATE THIS FOLDER!
+│   │                                  # Create your pipeline YAML files here during the hackathon
+│   │                                  # Suggested names (optional - use your own if preferred):
+│   ├── createagentpipeline.yml        #   → Your agent deployment pipeline (Step 2)
+│   └── agentconsumptionpipeline.yml   #   → Your evaluation pipeline (Step 4)
 ├── terraform/                         # 📋 Infrastructure as Code (prerequisites)
 │   ├── main.tf                        # Azure resource definitions
 │   ├── variables.tf                   # Configuration variables
@@ -167,7 +168,7 @@ foundrycicdbasic/
 ├── ado-hackathon/
 │   ├── README.md                      # This file
 │   ├── pipelines/
-│   │   └── hackathon-facilitator.yml  # ⭐ The ONE pipeline you need
+│   │   └── hackathon-facilitator.yml  # ⭐ The ONE pipeline you need to create
 │   └── work-items/                    # Instructions for each step
 │       ├── step-1-azure-devops.md
 │       ├── step-2-create-agent-pipeline.md
@@ -180,6 +181,8 @@ foundrycicdbasic/
 ├── createagent.py                     # Agent creation helper
 └── requirements.txt                   # Python dependencies
 ```
+
+> **📝 Note:** The `cicd/` folder does not exist initially - you will create it and add your pipeline YAML files as part of Step 2 and Step 4. You can name your pipeline files whatever you prefer, but the suggested names above are commonly used.
 
 ## 🎓 Step-by-Step Journey
 
@@ -286,7 +289,7 @@ The facilitator monitors work items and progression through the hackathon steps.
 
 ### Agent deployment fails
 
-**Issue:** `/cicd/createagentpipeline.yml` fails to deploy agents
+**Issue:** Your agent deployment pipeline fails to deploy agents
 
 **Solution:**
 - Check service connection is valid
@@ -297,7 +300,7 @@ The facilitator monitors work items and progression through the hackathon steps.
 
 ### Evaluation pipeline fails
 
-**Issue:** `/cicd/agentconsumptionpipeline.yml` fails
+**Issue:** Your evaluation/testing pipeline fails
 
 **Solution:**
 - Ensure agents are deployed first (Step 3)
@@ -337,8 +340,8 @@ When you complete all 6 steps:
 ## 📖 Additional Documentation
 
 - **[Work Item Files](work-items/)** - Detailed instructions for each step
-- **[/cicd Pipelines](../cicd/)** - Production-ready pipeline templates
 - **[/terraform](../terraform/)** - Infrastructure as Code for Azure resources
+- **[Azure Pipelines Documentation](https://learn.microsoft.com/azure/devops/pipelines/)** - Official Microsoft docs for building pipelines
 
 ## 🤝 Contributing
 
